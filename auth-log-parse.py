@@ -4,6 +4,7 @@
 
 import time
 import datetime
+from collections import defaultdict
 
 def parse_time(line):
     split_line = line.split(" ")
@@ -44,24 +45,20 @@ def parse_invalid_user(line):
     return info_bits
 
 def get_ips(fails):
-    ips = {}
+    ips = defaultdict(int)
     for line in fails:
         attacker_ip = line["ip"]
 
         if ips.has_key(attacker_ip):
             ips[attacker_ip] += 1
-        else:
-            ips[attacker_ip] = 1
     return ips
 
 def get_usernames(fails):
-    users = {}
+    users = defaultdict(int)
     for line in fails:
         user = line["user"]
         if users.has_key(user):
             users[user] += 1
-        else:
-            users[user] = 1
     return users
 
 
