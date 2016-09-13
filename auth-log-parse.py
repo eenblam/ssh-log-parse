@@ -30,11 +30,16 @@ def parse_password_fail(line):
 
 def parse_invalid_user(line):
     d = parse_time(line)
-    # Use -1 to prevent malicious attempts like `ssh "Invalid user"@here`
-    info = line.split("Invalid user ")[-1]
-    info = info.strip().split(" from ")
-    info_dict = {"user":info[0], "ip":info[1], "port":None, "date":d}
-    return info_dict
+    # Be careful how this is done!
+    # Attacker can specify bad username to break naive log parsers.
+    # e.g. parser should be able to handle result of something like this:
+    # ssh "   Invalid user Invalid user from 192.168.0.10"@<actual IP>
+    # Format of nonmaliciously constructed log: Invalid user <username> from 191.98.163.9
+    # Get "from <ip>"
+    split = line.strip().split("Invalid user ", 1) # maxsplit=1 !!!
+    user, ip = split.rsplit(" from ", 1)
+    info = {"user":user, "ip":ip, "port":None, "date":d}
+    return info
 
 def get_ips(fails):
     ips = defaultdict(int)
@@ -52,8 +57,6 @@ def get_usernames(fails):
         if users.has_key(user):
             users[user] += 1
     return users
-
-
 
 if __name__ == "__main__":
     auth_log = open("auth.log","r")
