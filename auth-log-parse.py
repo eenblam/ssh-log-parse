@@ -5,7 +5,6 @@
 import time
 import datetime
 
-
 def parse_time(line):
     split_line = line.split(" ")
     #print split_line
@@ -13,13 +12,11 @@ def parse_time(line):
         split_line.pop(1)
 
     time_bit = split_line[:3]
-
-
-    the_time = time.strptime("%s %s %s %s" % (time_bit[0],time_bit[1],time_bit[2], datetime.date.today().year), "%b %d %H:%M:%S %Y")
+    time_string = ' '.join(split_line[:3] + [datetime.date.today().year])
+    the_time = time.strptime(time_string, "%b %d %H:%M:%S:%Y")
     return the_time
 
 def parse_password_fail(line):
-
     d = parse_time(line)
     split_line = line.split("Failed password for")
     
@@ -29,33 +26,24 @@ def parse_password_fail(line):
     else:
         info_bits_raw = our_bit.strip(" ")
 
-
     #print info_bits_raw
-
     info_bits_raw = info_bits_raw.split(" ")
-
 
     info_bits = {"user":info_bits_raw[0], "ip":info_bits_raw[2], "port":info_bits_raw[4], "date":d}
     return info_bits
 
 def parse_invalid_user(line):
-
     d = parse_time(line)
     split_line = line.split("Invalid user ")
 
     #print split_line
-    info_bits_raw = split_line[1].strip("\n")
-
-    info_bits_raw = info_bits_raw.split(" from ")
+    info_bits_raw = split_line[1].strip("\n").split(" from ")
 
     #print info_bits_raw
-
     info_bits = {"user":info_bits_raw[0], "ip":info_bits_raw[1], "port":None, "date":d}
     return info_bits
 
-
 def get_ips(fails):
-    
     ips = {}
     for line in fails:
         attacker_ip = line["ip"]
@@ -70,7 +58,6 @@ def get_usernames(fails):
     users = {}
     for line in fails:
         user = line["user"]
-
         if users.has_key(user):
             users[user] += 1
         else:
