@@ -7,11 +7,9 @@ import datetime
 from collections import defaultdict
 
 def parse_time(line):
-    split_line = line.split()
-
-    time_bit = split_line[:3]
-    time_string = ' '.join(split_line[:3] + [datetime.date.today().year])
-    the_time = time.strptime(time_string, "%b %d %H:%M:%S:%Y")
+    time_tokens = line.split()[:3]
+    time_string = ' '.join(time_tokens + [datetime.date.today().year])
+    the_time = time.strptime(time_string, "%b %d %H:%M:%S %Y")
     return the_time
 
 def parse_password_fail(line):
@@ -73,4 +71,3 @@ if __name__ == "__main__":
     users = get_usernames(fails)
     for user,times in users.iteritems():
         print user + " - " + str(times)
-
