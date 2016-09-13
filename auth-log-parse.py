@@ -7,10 +7,7 @@ import datetime
 from collections import defaultdict
 
 def parse_time(line):
-    split_line = line.split(" ")
-    #print split_line
-    if split_line[1] == "":
-        split_line.pop(1)
+    split_line = line.split()
 
     time_bit = split_line[:3]
     time_string = ' '.join(split_line[:3] + [datetime.date.today().year])
@@ -19,35 +16,32 @@ def parse_time(line):
 
 def parse_password_fail(line):
     d = parse_time(line)
-    split_line = line.split("Failed password for")
-    
-    our_bit = split_line[1]
-    if our_bit.find(" invalid user ") == 0:
-        info_bits_raw = our_bit[14:]
-    else:
-        info_bits_raw = our_bit.strip(" ")
+    our_bit = line.split("Failed password for")[1].strip()
 
-    #print info_bits_raw
-    info_bits_raw = info_bits_raw.split(" ")
+    if our_bit.find("invalid user ") == 0:
+        info_bits = our_bit[13:]
 
-    info_bits = {"user":info_bits_raw[0], "ip":info_bits_raw[2], "port":info_bits_raw[4], "date":d}
-    return info_bits
+    info = line.split("Failed password for")
+    info = info[1].strip()
+    if info.find("invalid user ") == 0:
+        info = info[13:]
+
+    info = info.split()
+    info_dict = {"user":info[0], "ip":info[2], "port":info[4], "date":d}
+    return info_dict
 
 def parse_invalid_user(line):
     d = parse_time(line)
-    split_line = line.split("Invalid user ")
-
-    #print split_line
-    info_bits_raw = split_line[1].strip("\n").split(" from ")
-
-    #print info_bits_raw
-    info_bits = {"user":info_bits_raw[0], "ip":info_bits_raw[1], "port":None, "date":d}
-    return info_bits
+    # Use -1 to prevent malicious attempts like `ssh "Invalid user"@here`
+    info = line.split("Invalid user ")[-1]
+    info = info.strip().split(" from ")
+    info_dict = {"user":info[0], "ip":info[1], "port":None, "date":d}
+    return info_dict
 
 def get_ips(fails):
     ips = defaultdict(int)
-    for line in fails:
-        attacker_ip = line["ip"]
+    for d in fails:
+        attacker_ip = d["ip"]
 
         if ips.has_key(attacker_ip):
             ips[attacker_ip] += 1
@@ -55,8 +49,8 @@ def get_ips(fails):
 
 def get_usernames(fails):
     users = defaultdict(int)
-    for line in fails:
-        user = line["user"]
+    for d in fails:
+        user = d["user"]
         if users.has_key(user):
             users[user] += 1
     return users
