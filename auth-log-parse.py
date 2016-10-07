@@ -13,6 +13,8 @@ def parse_time(line):
     return the_time
 
 def parse_password_fail(line):
+    #TODO figure out format of this line
+    # and update to remove same bugs that were in parse-invalid_user
     d = parse_time(line)
     our_bit = line.split("Failed password for")[1].strip()
 
@@ -36,7 +38,7 @@ def parse_invalid_user(line):
     # ssh "   Invalid user Invalid user from 192.168.0.10"@<actual IP>
     # Format of nonmaliciously constructed log: Invalid user <username> from 191.98.163.9
     # Get "from <ip>"
-    split = line.strip().split("Invalid user ", 1) # maxsplit=1 !!!
+    split = line.strip().split("Invalid user ", maxsplit=1) # maxsplit is critical here!
     user, ip = split.rsplit(" from ", 1)
     info = {"user":user, "ip":ip, "port":None, "date":d}
     return info
@@ -59,18 +61,20 @@ def get_usernames(fails):
     return users
 
 if __name__ == "__main__":
-    auth_log = open("auth.log","r")
+    with open('auth.log', 'r') as auth_log:
+        fails = []
+        for line in auth_log:
+            if "Failed password for" in line:
+                fails.append( parse_password_fail(line) )
+            elif "Invalid user " in line:
+                #TODO This is dangerous. Need a try statement.
+                #     Suppose user tries to SSH as "Invalid user"...
+                #     This means that it could appear in more than one line.
+                fails.append( parse_invalid_user(line) )
 
-    fails = []
-    for line in auth_log:
-        if "Failed password for" in line:
-            fails.append( parse_password_fail(line) )
-        elif "Invalid user " in line:
-            fails.append( parse_invalid_user(line) )
-
-    ips = get_ips(fails)
-    for ip,times in ips.iteritems():
-        print ip + " - " + str(times)
-    users = get_usernames(fails)
-    for user,times in users.iteritems():
-        print user + " - " + str(times)
+        ips = get_ips(fails)
+        for ip,times in ips.iteritems():
+            print ip + " - " + str(times)
+        users = get_usernames(fails)
+        for user,times in users.iteritems():
+            print user + " - " + str(times)
